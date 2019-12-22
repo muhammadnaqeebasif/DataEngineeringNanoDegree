@@ -5,7 +5,7 @@ A startup called Sparkify wants to analyze the data they've been collecting on s
 The aim of this project is to create a database schema and ETL pipeline for this analysis. The database and ETL pipeline will be tested by running queries given by the analytics team from Sparkify and compare the results with their expected results.
 
 ## Project Description
-In this project, data modelling with Postgres and ETL pipeline using Python are made. Following are different task which are done in the project:
+In this project, data modelling with Postgres and ETL pipeline using Python are made. Following are different tasks which are done in the project:
 1. Define the fact and dimension tables for a star schema
 2. ETL pipeline that transfers data from files in two local directories into these tables in Postgres using Python and SQL.
 
@@ -123,11 +123,11 @@ Following are the different steps in the ETL pipeline:
 |3225|1970-01-01 00:25:42.837408|15|paid|SOZCTXZ12AB0182364|AR5KOSW1187FB35FF4|818|Chicago-Naperville-Elgin, IL-IN-WI|	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/36.0.1985.125 Chrome/36.0.1985.125 Safari/537.36"|
 
 ## Project File Structure
-1. **data** folder containing the data 
-2. **create_tables.py** drops and creates the tables. Run this file to reset the tables before each time the ETL scripts are run.
-3. **etl.ipynb** reads and processes a single file from song_data and log_data and loads the data into the tables. This notebook contains detailed instructions on the ETL process for each of the tables.
-4. **etl.py** reads and processes files from song_data and log_data and loads them into your tables. You can fill this out based on your work in the ETL notebook.
-5. **README.md** provides discussion on the project.
-6. **sql_queries.py** contains all the sql queries, and is imported into the last three files above.
-7. **test.ipynb** displays the first few rows of each table to check the database.
+1. **data**- folder containing the data 
+2. **create_tables.py**- drops and creates the tables. Run this file to reset the tables before each time the ETL scripts are run.
+3. **etl.ipynb**- reads and processes a single file from song_data and log_data and loads the data into the tables. This notebook contains detailed instructions on the ETL process for each of the tables.
+4. **etl.py**- reads and processes files from song_data and log_data and loads them into your tables. You can fill this out based on your work in the ETL notebook.
+5. **README.md**- provides description on the project.
+6. **sql_queries.py**- contains all the sql queries, and is imported into the last three files above.
+7. **test.ipynb**- displays the first few rows of each table to check the database.
 
