@@ -5,3 +5,4 @@ This folder contains the work and exercises done in lesson 3. It contains the fo
 * **images** - Folder containing images used in the notebooks.
 * **data** - Folder containing the data used in the lesson.
 * **lower_scripts.py** - pyspark script which converts upper case letters in songs to lower case letters. This file is created by `Debugging and Optimization.ipynb`
+* **test-emr.ipynb** - an EMR notebook which runs after attaching it with EMR cluster.
