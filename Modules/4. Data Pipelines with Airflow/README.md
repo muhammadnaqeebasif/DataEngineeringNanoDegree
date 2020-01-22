@@ -2,3 +2,4 @@
 
 This folder contains the work done in `Data Pipelines with Airflow` module of the Data Engineering Nano Degree. It contains the following folders:
 * **Lesson 1 - Data Pipelines** - This folder contains the work done in lesson 1 of `Data Pipelines with Airflow` module.
+* **Lesson 2 - Data Quality** - This folder contains the work done in lesson 2 of `Data Pipelines with Airflow` module.
