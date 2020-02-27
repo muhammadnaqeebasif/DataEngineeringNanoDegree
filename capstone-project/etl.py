@@ -164,7 +164,7 @@ def main():
     """
     spark = create_spark_session()
 
-    process_batch_data(spark,'static_data','batch_data_processed')
+    process_batch_data(spark,'batch_data','batch_data_processed')
 
 if __name__ == '__main__':
     main()
