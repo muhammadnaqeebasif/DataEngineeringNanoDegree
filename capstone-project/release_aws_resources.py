@@ -1,7 +1,7 @@
 import boto3
 import pandas as pd
 import configparser
-from aws_configuration_parser import *
+from helpers.aws_configuration_parser import *
 import time
 
 if __name__ == '__main__':
