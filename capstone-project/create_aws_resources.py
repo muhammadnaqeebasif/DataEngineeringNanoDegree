@@ -1,4 +1,4 @@
-from aws_configuration_parser import *
+from helpers.aws_configuration_parser import *
 import boto3
 import json
 import time
@@ -358,6 +358,11 @@ if __name__ == '__main__':
             Handler='lambda_function.lambda_handler',
             Code=dict(ZipFile=zipped_code),
             Timeout=300,  # Maximum allowable timeout
+            Environment={
+                'Variables': {
+                    'S3Bucket': S3['Bucket']
+                    }
+                }
         )
 
         # Creating Kinesis Trigger
