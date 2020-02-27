@@ -1,7 +1,7 @@
 from helpers import *
 import os
 import pandas as pd
-from aws_configuration_parser import *
+from helpers.aws_configuration_parser import *
 
 if __name__ == '__main__':
 
@@ -24,33 +24,21 @@ if __name__ == '__main__':
                                          forces,
                                          lambda force, d: dict(d, **{'force_id': force['id']}))
 
-    # Downloading the Neighborhood Related data from the API
-    counties = ['avon-and-somerset', 'bedfordshire', 'btp', 'cambridgeshire',
-                'cheshire', 'city-of-london', 'cleveland', 'cumbria', 'derbyshire',
-                'devon-and-cornwall', 'dorset', 'durham', 'dyfed-powys', 'essex',
-                'gloucestershire', 'greater-manchester', 'gwent', 'hampshire',
-                'hertfordshire', 'humberside', 'kent', 'lancashire', 'leicestershire',
-                'lincolnshire', 'merseyside', 'metropolitan', 'norfolk', 'north-wales',
-                'north-yorkshire', 'northamptonshire', 'northern-ireland', 'northumbria',
-                'nottinghamshire', 'south-wales', 'south-yorkshire', 'staffordshire',
-                'suffolk', 'surrey', 'sussex', 'thames-valley', 'warwickshire', 'west-mercia',
-                'west-midlands', 'west-yorkshire', 'wiltshire']
-
     # Getting the neighborhoods from the API
     neighborhoods = create_static_data('data/neighborhoods.json',
-                                       lambda county: f'https://data.police.uk/api/{county}/neighbourhoods',
-                                       counties,
-                                       lambda county, d: dict(d, **{'county': county}))
+                                       lambda force: f"https://data.police.uk/api/{force['id']}/neighbourhoods",
+                                       forces,
+                                       lambda force, d: dict(d, **{'force_id': force['id']}))
 
     # Getting the information about specific neighborhoods from the API
     specific_neighborhoods = create_static_data('data/specific_neighborhood.json',
-                                                lambda neighborhood: f"https://data.police.uk/api/{neighborhood['county']}/{neighborhood['id']}",
+                                                lambda neighborhood: f"https://data.police.uk/api/{neighborhood['force_id']}/{neighborhood['id']}",
                                                 neighborhoods)
 
     # Getting the boundaries of neighborhood from the API
     neighborhood_boundaries = create_static_data('data/neighborhood_boundaries.json',
                                                  lambda
-                                                     neighborhood: f"https://data.police.uk/api/{neighborhood['county']}/{neighborhood['id']}/boundary",
+                                                     neighborhood: f"https://data.police.uk/api/{neighborhood['force_id']}/{neighborhood['id']}/boundary",
                                                  neighborhoods,
                                                  lambda neighborhood, b: {'neighborhood_id': neighborhood['id'],
                                                                           'boundaries': b},
@@ -58,7 +46,7 @@ if __name__ == '__main__':
 
     # Getting the neighborhood teams from the API
     neighborhood_teams = create_static_data('data/neighborhood_teams.json',
-                                            lambda neighborhood: f"https://data.police.uk/api/{neighborhood['county']}/{neighborhood['id']}/people",
+                                            lambda neighborhood: f"https://data.police.uk/api/{neighborhood['force_id']}/{neighborhood['id']}/people",
                                             neighborhoods,
                                             lambda neighborhood, d: dict(d, **{'neighbour_id': neighborhood['id']}))
 
