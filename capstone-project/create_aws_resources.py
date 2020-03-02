@@ -1,64 +1,68 @@
-from aws_configuration_parser import *
+from plugins.aws_configuration_parser import *
 import boto3
 import json
 import time
 import zipfile
 
 if __name__ == '__main__':
+
+    # creating aws configuration object
+    aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+
     #---------------------------- Creating clients----------------------------------------------------------------------
     # Creating ec2 resource
     ec2 = boto3.resource('ec2',
-                         region_name=REGION,
-                         aws_access_key_id=ACCESS_KEY,
-                         aws_secret_access_key=SECRET_KEY
+                         region_name=aws_configs.REGION,
+                         aws_access_key_id=aws_configs.ACCESS_KEY,
+                         aws_secret_access_key=aws_configs.SECRET_KEY
                          )
 
     # Creating s3 resource
     s3 = boto3.resource('s3',
-                        region_name=REGION,
-                        aws_access_key_id=ACCESS_KEY,
-                        aws_secret_access_key=SECRET_KEY
+                        region_name=aws_configs.REGION,
+                        aws_access_key_id=aws_configs.ACCESS_KEY,
+                        aws_secret_access_key=aws_configs.SECRET_KEY
                         )
 
     # Creating kinesis client
     kinesis = boto3.client('kinesis',
-                           region_name=REGION,
-                           aws_access_key_id=ACCESS_KEY,
-                           aws_secret_access_key=SECRET_KEY
+                           region_name=aws_configs.REGION,
+                           aws_access_key_id=aws_configs.ACCESS_KEY,
+                           aws_secret_access_key=aws_configs.SECRET_KEY
                            )
 
     # Creating iam
     iam = boto3.client('iam',
-                       region_name=REGION,
-                       aws_access_key_id=ACCESS_KEY,
-                       aws_secret_access_key=SECRET_KEY
+                       region_name=aws_configs.REGION,
+                       aws_access_key_id=aws_configs.ACCESS_KEY,
+                       aws_secret_access_key=aws_configs.SECRET_KEY
                        )
 
     # Creating cloudwatch client
     cloud_watch = boto3.client('logs',
-                               region_name=REGION,
-                               aws_access_key_id=ACCESS_KEY,
-                               aws_secret_access_key=SECRET_KEY
+                               region_name=aws_configs.REGION,
+                               aws_access_key_id=aws_configs.ACCESS_KEY,
+                               aws_secret_access_key=aws_configs.SECRET_KEY
                                )
 
     # Creating firehose client
     firehose = boto3.client('firehose',
-                            region_name=REGION,
-                            aws_access_key_id=ACCESS_KEY,
-                            aws_secret_access_key=SECRET_KEY
+                            region_name=aws_configs.REGION,
+                            aws_access_key_id=aws_configs.ACCESS_KEY,
+                            aws_secret_access_key=aws_configs.SECRET_KEY
                             )
 
     # Creating Lambda client
     lambda_client = boto3.client('lambda',
-                                 region_name=REGION,
-                                 aws_access_key_id=ACCESS_KEY,
-                                 aws_secret_access_key=SECRET_KEY
+                                 region_name=aws_configs.REGION,
+                                 aws_access_key_id=aws_configs.ACCESS_KEY,
+                                 aws_secret_access_key=aws_configs.SECRET_KEY
                                  )
     # Creating redshift client
     redshift = boto3.client('redshift',
-                            region_name=REGION,
-                            aws_access_key_id=ACCESS_KEY,
-                            aws_secret_access_key=SECRET_KEY
+                            region_name=aws_configs.REGION,
+                            aws_access_key_id=aws_configs.ACCESS_KEY,
+                            aws_secret_access_key=aws_configs.SECRET_KEY
                             )
 
     #-------------------------------------------------------------------------------------------------------------------
@@ -66,7 +70,7 @@ if __name__ == '__main__':
     try:
         # creating firehose delivery role
         iam.create_role(Path='/',
-                        RoleName=FIREHOSE['ROLE_NAME'],
+                        RoleName=aws_configs.FIREHOSE['ROLE_NAME'],
                         Description='Allows Redshift clusters to call AWS services on your behalf.',
                         AssumeRolePolicyDocument=json.dumps({
                             "Version": "2012-10-17",
@@ -80,15 +84,15 @@ if __name__ == '__main__':
                                 }
                             ]
                         }))
-        print(f"Firehose IAM Role {FIREHOSE['ROLE_NAME']} is created")
+        print(f"Firehose IAM Role {aws_configs.FIREHOSE['ROLE_NAME']} is created")
     except Exception as e:
         print(e)
 
     # Get Account ID
     ACCOUNT_ID = boto3.client('sts',
-                              region_name=REGION,
-                              aws_access_key_id=ACCESS_KEY,
-                              aws_secret_access_key=SECRET_KEY
+                              region_name=aws_configs.REGION,
+                              aws_access_key_id=aws_configs.ACCESS_KEY,
+                              aws_secret_access_key=aws_configs.SECRET_KEY
                               ).get_caller_identity().get('Account')
 
     # creating firehose policy
@@ -117,8 +121,8 @@ if __name__ == '__main__':
                     "s3:PutObject"
                 ],
                 "Resource": [
-                    f"arn:aws:s3:::{S3['BUCKET']}",
-                    f"arn:aws:s3:::{S3['BUCKET']}/*",
+                    f"arn:aws:s3:::{aws_configs.S3['BUCKET']}",
+                    f"arn:aws:s3:::{aws_configs.S3['BUCKET']}/*",
                     "arn:aws:s3:::%FIREHOSE_BUCKET_NAME%",
                     "arn:aws:s3:::%FIREHOSE_BUCKET_NAME%/*"
                 ]
@@ -130,7 +134,7 @@ if __name__ == '__main__':
                     "lambda:InvokeFunction",
                     "lambda:GetFunctionConfiguration"
                 ],
-                "Resource": f"arn:aws:lambda:{REGION}:{ACCOUNT_ID}:function:%FIREHOSE_DEFAULT_FUNCTION%:%FIREHOSE_DEFAULT_VERSION%"
+                "Resource": f"arn:aws:lambda:{aws_configs.REGION}:{ACCOUNT_ID}:function:%FIREHOSE_DEFAULT_FUNCTION%:%FIREHOSE_DEFAULT_VERSION%"
             },
             {
                 "Sid": "",
@@ -139,7 +143,7 @@ if __name__ == '__main__':
                     "logs:PutLogEvents"
                 ],
                 "Resource": [
-                    f"arn:aws:logs:{REGION}:{ACCOUNT_ID}:log-group:/aws/kinesisfirehose/{FIREHOSE['DELIVERY_STREAM_NAME']}:log-stream:*"
+                    f"arn:aws:logs:{aws_configs.REGION}:{ACCOUNT_ID}:log-group:/aws/kinesisfirehose/{aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']}:log-stream:*"
                 ]
             },
             {
@@ -150,7 +154,7 @@ if __name__ == '__main__':
                     "kinesis:GetShardIterator",
                     "kinesis:GetRecords"
                 ],
-                "Resource": f"arn:aws:kinesis:{REGION}:{ACCOUNT_ID}:stream/{KINESIS['STREAM_NAME']}"
+                "Resource": f"arn:aws:kinesis:{aws_configs.REGION}:{ACCOUNT_ID}:stream/{aws_configs.KINESIS['STREAM_NAME']}"
             },
             {
                 "Effect": "Allow",
@@ -158,14 +162,14 @@ if __name__ == '__main__':
                     "kms:Decrypt"
                 ],
                 "Resource": [
-                    f"arn:aws:kms:{REGION}:{ACCOUNT_ID}:key/%SSE_KEY_ID%"
+                    f"arn:aws:kms:{aws_configs.REGION}:{ACCOUNT_ID}:key/%SSE_KEY_ID%"
                 ],
                 "Condition": {
                     "StringEquals": {
-                        "kms:ViaService": f"kinesis.{REGION}.amazonaws.com"
+                        "kms:ViaService": f"kinesis.{aws_configs.REGION}.amazonaws.com"
                     },
                     "StringLike": {
-                        "kms:EncryptionContext:aws:kinesis:arn": f"arn:aws:kinesis:{REGION}:{ACCOUNT_ID}:stream/{KINESIS['STREAM_NAME']}"
+                        "kms:EncryptionContext:aws:kinesis:arn": f"arn:aws:kinesis:{aws_configs.REGION}:{ACCOUNT_ID}:stream/{aws_configs.KINESIS['STREAM_NAME']}"
                     }
                 }
             }
@@ -173,14 +177,14 @@ if __name__ == '__main__':
     }
 
     # Attaching policy to firehose role
-    iam.put_role_policy(RoleName=FIREHOSE['ROLE_NAME'],
-                        PolicyName=FIREHOSE['POLICY'],
+    iam.put_role_policy(RoleName=aws_configs.FIREHOSE['ROLE_NAME'],
+                        PolicyName=aws_configs.FIREHOSE['POLICY'],
                         PolicyDocument=json.dumps(firehose_policy))
 
     try:
         # Creating Lambda Role
         iam.create_role(Path='/',
-                        RoleName=LAMBDA['ROLE_NAME'],
+                        RoleName=aws_configs.LAMBDA['ROLE_NAME'],
                         AssumeRolePolicyDocument=json.dumps({
                             "Version": "2012-10-17",
                             "Statement": [
@@ -196,13 +200,13 @@ if __name__ == '__main__':
                             }
                         )
         )
-        print(f"Lambda IAM Role {LAMBDA['ROLE_NAME']} is created")
+        print(f"Lambda IAM Role {aws_configs.LAMBDA['ROLE_NAME']} is created")
     except Exception as e:
         print(e)
 
     # Attaching the policy to lambda role
-    iam.put_role_policy(RoleName=LAMBDA['ROLE_NAME'],
-                        PolicyName=LAMBDA['POLICY'],
+    iam.put_role_policy(RoleName=aws_configs.LAMBDA['ROLE_NAME'],
+                        PolicyName=aws_configs.LAMBDA['POLICY'],
                         PolicyDocument=json.dumps({
                             "Version": "2012-10-17",
                             "Statement": [
@@ -232,7 +236,7 @@ if __name__ == '__main__':
         # Creating Redshift role
         iam.create_role(
             Path='/',
-            RoleName=REDSHIFT['ROLE_NAME'],
+            RoleName=aws_configs.REDSHIFT['ROLE_NAME'],
             Description='Allows Redshift clusters to call AWS services on your behalf.',
             AssumeRolePolicyDocument=json.dumps(
                 {'Statement': [{'Action': 'sts:AssumeRole',
@@ -240,12 +244,12 @@ if __name__ == '__main__':
                                 'Principal': {'Service': 'redshift.amazonaws.com'}}],
                  'Version': '2012-10-17'})
         )
-        print(f"Redshift IAM Role {REDSHIFT['ROLE_NAME']} is created")
+        print(f"Redshift IAM Role {aws_configs.REDSHIFT['ROLE_NAME']} is created")
     except Exception as e:
         print(e)
 
     # Attaching policy to redshift role
-    iam.attach_role_policy(RoleName=REDSHIFT['ROLE_NAME'],
+    iam.attach_role_policy(RoleName=aws_configs.REDSHIFT['ROLE_NAME'],
                            PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
                            )
 
@@ -253,34 +257,34 @@ if __name__ == '__main__':
     #------------------------------------------------Creating S3 Bucket------------------------------------------------
     try:
         # Creates s3 bucket
-        s3.create_bucket(Bucket=S3['BUCKET'],
+        s3.create_bucket(Bucket=aws_configs.S3['BUCKET'],
                          CreateBucketConfiguration={
-                             'LocationConstraint': REGION}
+                             'LocationConstraint': aws_configs.REGION}
                          )
-        print(f"S3 Bucket {S3['BUCKET']} is created")
+        print(f"S3 Bucket {aws_configs.S3['BUCKET']} is created")
     except Exception as e:
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #------------------------------------------------Creating Kinesis data stream---------------------------------------
     try:
         # Creating kinesis data streams
-        kinesis.create_stream(StreamName=KINESIS['STREAM_NAME'],
-                                     ShardCount=int(KINESIS['SHARD_COUNT']))
-        print(f"Kinesis Stream {KINESIS['STREAM_NAME']} is created")
+        kinesis.create_stream(StreamName=aws_configs.KINESIS['STREAM_NAME'],
+                                     ShardCount=int(aws_configs.KINESIS['SHARD_COUNT']))
+        print(f"Kinesis Stream {aws_configs.KINESIS['STREAM_NAME']} is created")
     except Exception as e:
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #------------------------------------------Creating Cloud Watch logs------------------------------------------------
     try:
         # Creating cloudwatch group
-        cloud_watch.create_log_group(logGroupName=f"/aws/kinesisfirehose/{FIREHOSE['DELIVERY_STREAM_NAME']}")
+        cloud_watch.create_log_group(logGroupName=f"/aws/kinesisfirehose/{aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']}")
 
         # Creating cloudwatch stream
         cloud_watch.create_log_stream(
-            logGroupName=f"/aws/kinesisfirehose/{FIREHOSE['DELIVERY_STREAM_NAME']}",
+            logGroupName=f"/aws/kinesisfirehose/{aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']}",
             logStreamName='S3Stream'
         )
-        print(f"Cloudwatch group /aws/kinesisfirehose/{FIREHOSE['DELIVERY_STREAM_NAME']} is created")
+        print(f"Cloudwatch group /aws/kinesisfirehose/{aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']} is created")
     except Exception as e:
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
@@ -289,13 +293,13 @@ if __name__ == '__main__':
     time.sleep(30)
 
     # Getting the ARN for firehose role
-    firehose_role_arn = iam.get_role(RoleName=FIREHOSE['ROLE_NAME'])['Role']['Arn']
+    firehose_role_arn = iam.get_role(RoleName=aws_configs.FIREHOSE['ROLE_NAME'])['Role']['Arn']
     #
     # # Getting the ARN of kinesis stream
-    kinesis_stream_arn = kinesis.describe_stream(StreamName=KINESIS['STREAM_NAME'])['StreamDescription']['StreamARN']
+    kinesis_stream_arn = kinesis.describe_stream(StreamName=aws_configs.KINESIS['STREAM_NAME'])['StreamDescription']['StreamARN']
     try:
         firehose.create_delivery_stream(
-            DeliveryStreamName=FIREHOSE['DELIVERY_STREAM_NAME'],
+            DeliveryStreamName=aws_configs.FIREHOSE['DELIVERY_STREAM_NAME'],
             DeliveryStreamType='KinesisStreamAsSource',
             KinesisStreamSourceConfiguration={
                 'KinesisStreamARN': kinesis_stream_arn,
@@ -303,7 +307,7 @@ if __name__ == '__main__':
             },
             S3DestinationConfiguration={
                 'RoleARN': firehose_role_arn,
-                'BucketARN': f"arn:aws:s3:::{S3['BUCKET']}",
+                'BucketARN': f"arn:aws:s3:::{aws_configs.S3['BUCKET']}",
                 'Prefix': 'streamed_data-',
                 'BufferingHints': {
                     'SizeInMBs': 5,
@@ -315,14 +319,14 @@ if __name__ == '__main__':
                 },
                 'CloudWatchLoggingOptions': {
                     'Enabled': True,
-                    'LogGroupName': f"/aws/kinesisfirehose/{FIREHOSE['DELIVERY_STREAM_NAME']}",
+                    'LogGroupName': f"/aws/kinesisfirehose/{aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']}",
                     'LogStreamName': 'S3Stream'
 
                 }
             },
 
         )
-        print(f"Firehose Delivery Stream {FIREHOSE['DELIVERY_STREAM_NAME']} is created")
+        print(f"Firehose Delivery Stream {aws_configs.FIREHOSE['DELIVERY_STREAM_NAME']} is created")
     except Exception as e:
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
@@ -335,14 +339,14 @@ if __name__ == '__main__':
         zf.close()
 
     # Getting the role
-    lambda_role_arn = iam.get_role(RoleName=LAMBDA['ROLE_NAME'])['Role']['Arn']
+    lambda_role_arn = iam.get_role(RoleName=aws_configs.LAMBDA['ROLE_NAME'])['Role']['Arn']
 
     with open('lambda.zip', 'rb') as f:
         zipped_code = f.read()
     try:
         # Creating Lambda function
         lambda_client.create_function(
-            FunctionName=LAMBDA['FUNCTION_NAME'],
+            FunctionName=aws_configs.LAMBDA['FUNCTION_NAME'],
             Runtime='python3.7',
             Role=lambda_role_arn,
             Handler='lambda_function.lambda_handler',
@@ -350,8 +354,8 @@ if __name__ == '__main__':
             Timeout=300,  # Maximum allowable timeout
             Environment={
                 'Variables': {
-                    'S3Bucket': S3['Bucket'],
-                    'output_key_prefix' : S3['real_processed_key']
+                    'S3Bucket': aws_configs.S3['Bucket'],
+                    'output_key_prefix' : aws_configs.S3['real_processed_key']
                     }
                 }
         )
@@ -359,33 +363,33 @@ if __name__ == '__main__':
         # Creating Kinesis Trigger
         lambda_client.create_event_source_mapping(
             EventSourceArn=kinesis_stream_arn,
-            FunctionName=LAMBDA['FUNCTION_NAME'],
+            FunctionName=aws_configs.LAMBDA['FUNCTION_NAME'],
             Enabled=True,
             BatchSize=100,
             StartingPosition='LATEST',
             MaximumRetryAttempts=123
         )
-        print(f"Lambda function {LAMBDA['FUNCTION_NAME']} is created")
+        print(f"Lambda function {aws_configs.LAMBDA['FUNCTION_NAME']} is created")
     except Exception as e:
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #-----------------------------------------Creating RedShift Cluster-------------------------------------------------
-    redshift_role_arn = iam.get_role(RoleName=REDSHIFT['ROLE_NAME'])['Role']['Arn']
+    redshift_role_arn = iam.get_role(RoleName=aws_configs.REDSHIFT['ROLE_NAME'])['Role']['Arn']
 
     try:
 
         # creating rdshift cluster
         response = redshift.create_cluster(
             # HW
-            ClusterType=REDSHIFT['CLUSTER_TYPE'],
-            NodeType=REDSHIFT['NODE_TYPE'],
-            NumberOfNodes=int(REDSHIFT['NUM_NODES']),
+            ClusterType=aws_configs.REDSHIFT['CLUSTER_TYPE'],
+            NodeType=aws_configs.REDSHIFT['NODE_TYPE'],
+            NumberOfNodes=int(aws_configs.REDSHIFT['NUM_NODES']),
 
             # Identifiers & Credentials
-            DBName=REDSHIFT['DB_NAME'],
-            ClusterIdentifier=REDSHIFT['CLUSTER_IDENTIFIER'],
-            MasterUsername=REDSHIFT['DB_USER'],
-            MasterUserPassword=REDSHIFT['DB_PASSWORD'],
+            DBName=aws_configs.REDSHIFT['DB_NAME'],
+            ClusterIdentifier=aws_configs.REDSHIFT['CLUSTER_IDENTIFIER'],
+            MasterUsername=aws_configs.REDSHIFT['DB_USER'],
+            MasterUserPassword=aws_configs.REDSHIFT['DB_PASSWORD'],
 
             # Roles (for s3 access)
             IamRoles=[redshift_role_arn]
@@ -394,11 +398,11 @@ if __name__ == '__main__':
         print(e)
 
     # Checking if redshift cluster becomes available or not
-    myClusterProps = redshift.describe_clusters(ClusterIdentifier=REDSHIFT['CLUSTER_IDENTIFIER'])['Clusters'][0]
+    myClusterProps = redshift.describe_clusters(ClusterIdentifier=aws_configs.REDSHIFT['CLUSTER_IDENTIFIER'])['Clusters'][0]
     while myClusterProps['ClusterAvailabilityStatus'] != 'Available':
-        myClusterProps = redshift.describe_clusters(ClusterIdentifier=REDSHIFT['CLUSTER_IDENTIFIER'])['Clusters'][0]
+        myClusterProps = redshift.describe_clusters(ClusterIdentifier=aws_configs.REDSHIFT['CLUSTER_IDENTIFIER'])['Clusters'][0]
         time.sleep(10)
-    print(f"Redshift cluster {REDSHIFT['CLUSTER_IDENTIFIER']} is created")
+    print(f"Redshift cluster {aws_configs.REDSHIFT['CLUSTER_IDENTIFIER']} is created")
     # Open an incoming  TCP port to access the cluster endpoint
     try:
         vpc = ec2.Vpc(id=myClusterProps['VpcId'])
@@ -407,19 +411,19 @@ if __name__ == '__main__':
             GroupName=defaultSg.group_name,
             CidrIp='0.0.0.0/0',
             IpProtocol='TCP',
-            FromPort=int(REDSHIFT['PORT']),
-            ToPort=int(REDSHIFT['PORT'])
+            FromPort=int(aws_configs.REDSHIFT['PORT']),
+            ToPort=int(aws_configs.REDSHIFT['PORT'])
         )
     except Exception as e:
         print(e)
 
     # Adding end point configuration of the cluster to the configuration file
     config = configparser.ConfigParser()
-    config.read('credentials/resources.cfg')
+    config.read('dags/credentials/resources.cfg')
 
     config['REDSHIFT']['ENDPOINT'] = myClusterProps['Endpoint']['Address']
     config['REDSHIFT']['ROLE_ARN'] = redshift_role_arn
 
     # writing to the configuration file
-    with open('credentials/resources.cfg', 'w') as config_file:
+    with open('dags/credentials/resources.cfg', 'w') as config_file:
         config.write(config_file)

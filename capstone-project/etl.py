@@ -1,12 +1,15 @@
 # Importing the libraries
-from aws_configuration_parser import *
+from plugins.aws_configuration_parser import *
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as fn
 
 import os
 
-os.environ['AWS_ACCESS_KEY_ID']= ACCESS_KEY
-os.environ['AWS_SECRET_ACCESS_KEY']=SECRET_KEY
+# creating aws configuration object
+aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+
+os.environ['AWS_ACCESS_KEY_ID']= aws_configs.ACCESS_KEY
+os.environ['AWS_SECRET_ACCESS_KEY']=aws_configs.SECRET_KEY
 
 
 def create_spark_session():
@@ -43,10 +46,10 @@ def process_batch_data(spark,input_prefix, output_prefix):
         None
         """
     # Get forces data
-    forces = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/forces.json")
+    forces = spark.read.json(f"s3a://{input_prefix}/forces.json")
 
     # Get forces description
-    forces_description = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/forces_description.json")
+    forces_description = spark.read.json(f"s3a://{input_prefix}/forces_description.json")
 
     # Extracting the data from forces_description making it simple
     forces_description = forces_description.select('id', 'name', 'telephone', 'url',
@@ -65,10 +68,10 @@ def process_batch_data(spark,input_prefix, output_prefix):
     dim_forces = dim_forces.drop('force_id', 'force_name')
 
     # Writing the dimension table according to output prefix specified
-    dim_forces.write.mode('overwrite').json(f"s3a://{S3['Bucket']}/{output_prefix}/dim_forces")
+    dim_forces.write.mode('overwrite').json(f"s3a://{output_prefix}/dim_forces")
 
     # Reading the senior officers data
-    senior_officers = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/senior_officers.json")
+    senior_officers = spark.read.json(f"s3a://{input_prefix}/senior_officers.json")
 
     # Writing the table according to the output prefix specified
     senior_officers.selectExpr('force_id', 'name', 'rank', 'bio',
@@ -78,13 +81,13 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                'contact_details.website AS website'
                                )\
                     .write.mode('overwrite')\
-                    .json(f"s3a://{S3['Bucket']}/{output_prefix}/senior_officers")
+                    .json(f"s3a://{output_prefix}/senior_officers")
 
     # Reading the neighborhood data
-    neighborhoods = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/neighborhoods.json")
+    neighborhoods = spark.read.json(f"s3a://{input_prefix}/neighborhoods.json")
 
     # Reading the data containing the description of the neighborhood
-    specific_neighborhoods = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/specific_neighborhood.json")
+    specific_neighborhoods = spark.read.json(f"s3a://{input_prefix}/specific_neighborhood.json")
 
     # Extracting the police stations locations in the specific neighborhood
     neighborhood_locations = specific_neighborhoods.select(fn.col('id'),
@@ -107,7 +110,7 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                                             type IS NOT NULL
                                                         """)
     neighborhood_locations.write.mode('overwrite')\
-                    .json(f"s3a://{S3['Bucket']}/{output_prefix}/neighborhood_locations")
+                    .json(f"s3a://{output_prefix}/neighborhood_locations")
 
     # dropping locations column from the specific neighborhood
     specific_neighborhoods = specific_neighborhoods.drop('locations')
@@ -136,10 +139,10 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                            how='left').drop('neighborhood_id','neighborhood_name')
 
     # Writing the neighborhood dimension table according to the output prefix provided
-    dim_neighborhoods.write.mode('overwrite').json(f"s3a://{S3['Bucket']}/{output_prefix}/dim_neighborhoods")
+    dim_neighborhoods.write.mode('overwrite').json(f"s3a://{output_prefix}/dim_neighborhoods")
 
     # Reading data for the boundaries for each neighborhoods
-    neighborhood_boundaries = spark.read.json(f"s3a://{S3['BUCKET']}/{input_prefix}/neighborhood_boundaries.json")
+    neighborhood_boundaries = spark.read.json(f"s3a://{input_prefix}/neighborhood_boundaries.json")
 
     # Extracting required columns from the specific neighborhood
     neighborhood_boundaries= neighborhood_boundaries.select('neighborhood_id',
@@ -149,7 +152,7 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                                                 'boundaries.longitude AS longitude')
 
     # Writing the neighborhood boundaries table according to the output prefix provided
-    neighborhood_boundaries.write.mode('overwrite').json(f"s3a://{S3['Bucket']}/{output_prefix}/neighborhood_boundaries")
+    neighborhood_boundaries.write.mode('overwrite').json(f"s3a://{output_prefix}/neighborhood_boundaries")
 
 
 
@@ -163,7 +166,8 @@ def main():
     """
     spark = create_spark_session()
 
-    process_batch_data(spark,S3['batched_key'],S3['batched_processed_key'])
+    process_batch_data(spark,f"{aws_configs.S3['bucket']}/{aws_configs.S3['batched_key']}",
+                       f"{aws_configs.S3['bucket']}/{aws_configs.S3['batched_processed_key']}")
 
 if __name__ == '__main__':
     main()

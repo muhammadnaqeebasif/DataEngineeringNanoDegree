@@ -1,8 +1,11 @@
-from data_create_helpers import *
+from plugins.data_create_helpers import *
 import os
-from aws_configuration_parser import *
+from plugins.aws_configuration_parser import *
 
 if __name__ == '__main__':
+
+    # creating aws configuration object
+    aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
 
     if not os.path.exists('data'):
         os.makedirs('data')
@@ -52,8 +55,8 @@ if __name__ == '__main__':
     # uploading the files to the S3 bucket
     for file in [file for file in os.listdir('data') if '.json' in file]:
         upload_to_s3(f'data/{file}',
-                     S3['BUCKET'],
-                     f"{S3['batched_key']}/{file}",
-                     ACCESS_KEY,
-                     SECRET_KEY,
-                     REGION)
+                     aws_configs.S3['BUCKET'],
+                     f"{aws_configs.S3['batched_key']}/{file}",
+                     aws_configs.ACCESS_KEY,
+                     aws_configs.SECRET_KEY,
+                     aws_configs.REGION)

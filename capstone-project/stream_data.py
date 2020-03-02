@@ -1,17 +1,18 @@
-from data_create_helpers import *
+from plugins.data_create_helpers import *
 import boto3
 import json
 from datetime import datetime
-from aws_configuration_parser import *
+from plugins.aws_configuration_parser import *
 
-# Kinesis data stream name
-my_stream_name = 'police-data-stream'
+# creating aws configuration object
+aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+
 
 # Creating kinesis client
 kinesis_client = boto3.client('kinesis',
-                              region_name=REGION,
-                              aws_access_key_id=ACCESS_KEY,
-                              aws_secret_access_key=SECRET_KEY
+                              region_name=aws_configs.REGION,
+                              aws_access_key_id=aws_configs.ACCESS_KEY,
+                              aws_secret_access_key=aws_configs.SECRET_KEY
                               )
 
 def put_to_stream(stream_name,data, partition_key):
@@ -59,7 +60,7 @@ if __name__ == '__main__':
                     # if crime data is not present in temp then puts the data to kinesis stream
                     if c_d not in temp:
                         # puts the data to the kinesis stream
-                        put_to_stream(KINESIS['STREAM_NAME'],
+                        put_to_stream(aws_configs.KINESIS['STREAM_NAME'],
                                       dict(c_d,**{'streamed_data_type':'crime'}),
                                       f"{current_year}-{current_month:02}")
                         try:
@@ -67,7 +68,7 @@ if __name__ == '__main__':
                             outcomes_data = read_from_url(f"https://data.police.uk/api/outcomes-for-crime/{c_d['persistent_id']}")
                             for o_d in outcomes_data:
                                 # pushes the outcome data to kinesis stream
-                                put_to_stream(KINESIS['STREAM_NAME'],
+                                put_to_stream(aws_configs.KINESIS['STREAM_NAME'],
                                               dict(o_d, **{'streamed_data_type': 'outcomes'}),
                                               f"{current_year}-{current_month:02}")
                         except:
