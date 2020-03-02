@@ -1,7 +1,6 @@
-from helpers import *
+from data_create_helpers import *
 import os
-import pandas as pd
-from helpers.aws_configuration_parser import *
+from aws_configuration_parser import *
 
 if __name__ == '__main__':
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
     for file in [file for file in os.listdir('data') if '.json' in file]:
         upload_to_s3(f'data/{file}',
                      S3['BUCKET'],
-                     f'batch_data/{file}',
+                     f"{S3['batched_key']}/{file}",
                      ACCESS_KEY,
                      SECRET_KEY,
                      REGION)

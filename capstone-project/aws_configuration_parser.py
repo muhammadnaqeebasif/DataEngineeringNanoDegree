@@ -1,5 +1,5 @@
 import configparser
-import  pandas as pd
+import pandas as pd
 
 # Reading the resources file
 RESOURCES_CONF='./credentials/resources.cfg'
@@ -18,5 +18,3 @@ REGION = config['AWS']['REGION']
 S3=config['S3']
 LAMBDA = config['LAMBDA']
 REDSHIFT = config['REDSHIFT']
-
-

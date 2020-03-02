@@ -1,7 +1,5 @@
 import boto3
-import pandas as pd
-import configparser
-from helpers.aws_configuration_parser import *
+from aws_configuration_parser import *
 import time
 
 if __name__ == '__main__':
@@ -111,17 +109,17 @@ if __name__ == '__main__':
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #---------------------------------------------Deleting S3 Bucket---------------------------------------------------
-    try:
-        # Creates a reference to S3 Bucket
-        bucket = s3.Bucket(S3['BUCKET'])
-        # Removes all the keys inside the bucket
-        for key in bucket.objects.all():
-            key.delete()
-        # Deletes the bucket
-        bucket.delete()
-        print(f"S3 Bucket {S3['BUCKET']} is deleted")
-    except Exception as e:
-        print(e)
+    # try:
+    #     # Creates a reference to S3 Bucket
+    #     bucket = s3.Bucket(S3['BUCKET'])
+    #     # Removes all the keys inside the bucket
+    #     for key in bucket.objects.all():
+    #         key.delete()
+    #     # Deletes the bucket
+    #     bucket.delete()
+    #     print(f"S3 Bucket {S3['BUCKET']} is deleted")
+    # except Exception as e:
+    #     print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #--------------------------------------------Deletomg the redshift cluster------------------------------------------
     try:

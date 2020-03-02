@@ -1,8 +1,7 @@
 # Importing the libraries
-from helpers.aws_configuration_parser import *
+from aws_configuration_parser import *
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as fn
-import pyspark.sql.types as typ
 
 import os
 
@@ -128,7 +127,7 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                                                'contact_details.website AS website',
                                                                'contact_details.youtube AS youtube',
                                                                'centre.latitude AS centre_latitude',
-                                                               'centre.longitude AS centre_logitude')
+                                                               'centre.longitude AS centre_longitude')
 
     # Creating dimension table for the neighborhoods by joining neighborhoods and specific_neighborhoods together
     dim_neighborhoods = neighborhoods.join(specific_neighborhoods,
@@ -164,7 +163,7 @@ def main():
     """
     spark = create_spark_session()
 
-    process_batch_data(spark,'batch_data','batch_data_processed')
+    process_batch_data(spark,S3['batched_key'],S3['batched_processed_key'])
 
 if __name__ == '__main__':
     main()

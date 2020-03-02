@@ -1,9 +1,8 @@
-from helpers.aws_configuration_parser import *
+from aws_configuration_parser import *
 import boto3
 import json
 import time
 import zipfile
-import re
 
 if __name__ == '__main__':
     #---------------------------- Creating clients----------------------------------------------------------------------
@@ -328,15 +327,6 @@ if __name__ == '__main__':
         print(e)
     #-------------------------------------------------------------------------------------------------------------------
     #-------------------------------------------Creating Lambda Function------------------------------------------------
-    # Replace the S3 Bucket in the lambda function
-    with open('lambda_function.py', 'r') as f:
-        data = f.read()
-    data = data.split('\n')
-    data[9] = re.sub("'[\w-]+'", f"'{S3['BUCKET']}'", data[9])
-
-    with open("lambda_function.py", 'w') as fout:
-        fout.write("\n".join(data))
-
     # Creating zip file for lambda function
     zf = zipfile.ZipFile('lambda.zip',mode='w')
     try:
@@ -360,7 +350,8 @@ if __name__ == '__main__':
             Timeout=300,  # Maximum allowable timeout
             Environment={
                 'Variables': {
-                    'S3Bucket': S3['Bucket']
+                    'S3Bucket': S3['Bucket'],
+                    'output_key_prefix' : S3['real_processed_key']
                     }
                 }
         )
@@ -408,7 +399,7 @@ if __name__ == '__main__':
         myClusterProps = redshift.describe_clusters(ClusterIdentifier=REDSHIFT['CLUSTER_IDENTIFIER'])['Clusters'][0]
         time.sleep(10)
     print(f"Redshift cluster {REDSHIFT['CLUSTER_IDENTIFIER']} is created")
-    # Open an incoming  TCP port to access the cluster ednpoint
+    # Open an incoming  TCP port to access the cluster endpoint
     try:
         vpc = ec2.Vpc(id=myClusterProps['VpcId'])
         defaultSg = list(vpc.security_groups.all())[0]
@@ -424,11 +415,11 @@ if __name__ == '__main__':
 
     # Adding end point configuration of the cluster to the configuration file
     config = configparser.ConfigParser()
-    config.read('resources.cfg')
+    config.read('credentials/resources.cfg')
 
     config['REDSHIFT']['ENDPOINT'] = myClusterProps['Endpoint']['Address']
     config['REDSHIFT']['ROLE_ARN'] = redshift_role_arn
 
     # writing to the configuration file
-    with open('resources.cfg', 'w') as config_file:
+    with open('credentials/resources.cfg', 'w') as config_file:
         config.write(config_file)

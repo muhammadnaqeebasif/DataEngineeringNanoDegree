@@ -4,7 +4,7 @@ import datetime
 import boto3
 import os
 
-def to_csv_format(json_data):
+def to_json_format(json_data):
     """ Converts json data to csv format
     Parameters
     ----------
@@ -16,11 +16,7 @@ def to_csv_format(json_data):
     str
         Return the CSV representation format of the data
     """
-    res = []
-    for data in json_data:
-        temp = [str(data[key]) if not isinstance(data[key], str) else f'"{data[key]}"' for key in data]
-        res.append(','.join(temp))
-
+    res = [json.dumps(d) for d in json_data]
     return '\n'.join(res)
 
 
@@ -29,6 +25,7 @@ def lambda_handler(event, context):
 
     s3 = boto3.client('s3')
     bucket_name = os.environ['S3Bucket']
+    output_key_prefix = os.environ['output_key_prefix']
 
     # list to contain crimes specific record
     crimes = []
@@ -45,7 +42,7 @@ def lambda_handler(event, context):
             for outcome in data['outcomes']:
                 d = {}
                 d['date'] = outcome['date']
-                d['person_id'] = outcome['person_id']
+                d['person_id'] = str(outcome['person_id'])
                 d['category_code'] = outcome['category']['code']
                 d['category_name'] = outcome['category']['name']
                 d['persistent_id'] = data['crime']['persistent_id']
@@ -66,17 +63,17 @@ def lambda_handler(event, context):
         # puts the crime record into the S3 bucket
         response = s3.put_object(
             Bucket=bucket_name,
-            Key=f"crimes/{current_time.year}/{current_time.month}/{current_time.day}/{current_time.hour}/" + \
-                f"crime-{current_time.timestamp()}.csv",
-            Body=to_csv_format(crimes)
+            Key=f"{output_key_prefix}/crimes/{current_time.year}/{current_time.month}/{current_time.day}/{current_time.hour}/" + \
+                f"crime-{current_time.timestamp()}.json",
+            Body=to_json_format(crimes)
         )
         # puts the outcomes records into the S3 bucket
     if len(outcomes) > 0:
         response = s3.put_object(
             Bucket=bucket_name,
-            Key=f"outcomes/{current_time.year}/{current_time.month}/{current_time.day}/{current_time.hour}/" + \
+            Key=f"{output_key_prefix}/outcomes/{current_time.year}/{current_time.month}/{current_time.day}/{current_time.hour}/" + \
                 f"outcomes-{current_time.timestamp()}.json",
-            Body=to_csv_format(outcomes)
+            Body=to_json_format(outcomes)
         )
 
     return response

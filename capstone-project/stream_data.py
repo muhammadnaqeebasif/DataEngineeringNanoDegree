@@ -1,8 +1,8 @@
-from helpers import *
+from data_create_helpers import *
 import boto3
 import json
 from datetime import datetime
-from helpers.aws_configuration_parser import *
+from aws_configuration_parser import *
 
 # Kinesis data stream name
 my_stream_name = 'police-data-stream'
