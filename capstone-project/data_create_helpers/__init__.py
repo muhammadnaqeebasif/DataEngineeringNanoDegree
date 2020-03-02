@@ -1,4 +1,4 @@
-from plugins.data_create_helpers.data_create_helper import *
+from data_create_helpers.data_create_helper import *
 
 __all__ = [
     'write_json_local',

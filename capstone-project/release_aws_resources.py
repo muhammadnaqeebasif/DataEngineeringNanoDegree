@@ -5,7 +5,7 @@ import time
 if __name__ == '__main__':
 
     # creating aws configuration object
-    aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+    aws_configs = AwsConfigs('credentials/credentials.csv', 'credentials/resources.cfg')
     #------------------------------------Creating Clients--------------------------------------------------------------
     # Creating ec2 resource
     ec2 = boto3.resource('ec2',

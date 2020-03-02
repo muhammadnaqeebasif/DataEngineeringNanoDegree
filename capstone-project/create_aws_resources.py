@@ -7,7 +7,7 @@ import zipfile
 if __name__ == '__main__':
 
     # creating aws configuration object
-    aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+    aws_configs = AwsConfigs('credentials/credentials.csv', 'credentials/resources.cfg')
 
     #---------------------------- Creating clients----------------------------------------------------------------------
     # Creating ec2 resource
@@ -419,11 +419,11 @@ if __name__ == '__main__':
 
     # Adding end point configuration of the cluster to the configuration file
     config = configparser.ConfigParser()
-    config.read('dags/credentials/resources.cfg')
+    config.read('credentials/resources.cfg')
 
     config['REDSHIFT']['ENDPOINT'] = myClusterProps['Endpoint']['Address']
     config['REDSHIFT']['ROLE_ARN'] = redshift_role_arn
 
     # writing to the configuration file
-    with open('dags/credentials/resources.cfg', 'w') as config_file:
+    with open('credentials/resources.cfg', 'w') as config_file:
         config.write(config_file)

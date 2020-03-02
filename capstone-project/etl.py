@@ -6,7 +6,7 @@ from pyspark.sql import functions as fn
 import os
 
 # creating aws configuration object
-aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+aws_configs = AwsConfigs('credentials/credentials.csv', 'credentials/resources.cfg')
 
 os.environ['AWS_ACCESS_KEY_ID']= aws_configs.ACCESS_KEY
 os.environ['AWS_SECRET_ACCESS_KEY']=aws_configs.SECRET_KEY

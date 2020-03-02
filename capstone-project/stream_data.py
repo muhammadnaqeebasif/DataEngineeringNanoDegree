@@ -1,11 +1,11 @@
-from plugins.data_create_helpers import *
+from data_create_helpers import *
 import boto3
 import json
 from datetime import datetime
 from plugins.aws_configuration_parser import *
 
 # creating aws configuration object
-aws_configs = AwsConfigs('dags/credentials/credentials.csv', 'dags/credentials/resources.cfg')
+aws_configs = AwsConfigs('credentials/credentials.csv', 'credentials/resources.cfg')
 
 
 # Creating kinesis client
