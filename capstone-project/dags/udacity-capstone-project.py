@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import logging
+import os
 from operators import *
 from helpers import *
 from airflow.operators.dummy_operator import DummyOperator
@@ -8,14 +9,38 @@ from airflow import settings
 from airflow.models import Connection
 from aws_configuration_parser import *
 from airflow.operators.python_operator import PythonOperator
+ 
+# creating aws configuration object
+aws_configs = AwsConfigs(f"{os.environ['AIRFLOW_HOME']}/credentials/credentials.csv", 
+                         f"{os.environ['AIRFLOW_HOME']}/credentials/resources.cfg")
 
 def hello_world():
-    logging.info(f"Hello World! {S3['bucket']}")
+    logging.info(f"Hello World! {aws_configs.S3['bucket']}")
+
+# Creating redshift connection
+redshift_conn = Connection(conn_id='redshift',
+                  conn_type='postgres',
+                  host=aws_configs.REDSHIFT['endpoint'],
+                  login=aws_configs.REDSHIFT['db_user'],
+                  password=aws_configs.REDSHIFT['db_password'],
+                  schema=aws_configs.REDSHIFT['db_name'],
+                  port=aws_configs.REDSHIFT['port']
+                  )
+
+# Creating aws connection
+aws_conn = Connection(conn_id='aws_credentials',
+                  conn_type='aws',
+                  login=aws_configs.ACCESS_KEY,
+                  password=aws_configs.SECRET_KEY
+                  )
+
+session = settings.Session() # get the session
+session.add(redshift_conn)
+session.add(aws_conn)
+
+session.commit() # it will insert the connection object programmatically.
 
 
-# conn = Connection(conn_id='redshift',
-#                   conn_type='postgres',
-#                   host=)
 
 default_args = {
     'owner': 'naqeeb',
@@ -33,23 +58,19 @@ dag = DAG(
         schedule_interval='@hourly'
         )
 
-# start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
-# stage_events_to_redshift = StageToRedshiftOperator(
-#     task_id='Stage_events',
-#     dag=dag,
-#     redshift_conn_id='redshift',
-#     aws_credentials_id ='aws_credentials',
-#     table='staging_events',
-#     s3_bucket='udacity-dend',
-#     s3_key='log_data',
-#     region='us-west-2',
-#     file_type='JSON',
-#     create_table_stmt=CreateTablesQueries.staging_neighborhoods_table_create
-# )
-
-greet_task = PythonOperator(
-   task_id="hello_world_task",
-   python_callable=hello_world,
-   dag=dag
+staging_neighborhoods_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_neighborhood',
+    dag=dag,
+    redshift_conn_id='redshift',
+    aws_credentials_id ='aws_credentials',
+    table='staging_neighborhoods',
+    s3_bucket=aws_configs.S3['BUCKET'],
+    s3_key=f"{aws_configs.S3['batched_process_key']}/dim_neighborhoods",
+    region=aws_configs.REGION,
+    file_type='JSON',
+    create_table_stmt=CreateTableQueries.staging_neighborhoods_table_create
 )
+
+start_operator >> staging_neighborhoods_to_redshift
