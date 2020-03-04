@@ -8,9 +8,8 @@ import os
 # creating aws configuration object
 aws_configs = AwsConfigs('credentials/credentials.csv', 'credentials/resources.cfg')
 
-os.environ['AWS_ACCESS_KEY_ID']= aws_configs.ACCESS_KEY
-os.environ['AWS_SECRET_ACCESS_KEY']=aws_configs.SECRET_KEY
-
+os.environ['AWS_ACCESS_KEY_ID'] = aws_configs.ACCESS_KEY
+os.environ['AWS_SECRET_ACCESS_KEY'] = aws_configs.SECRET_KEY
 
 def create_spark_session():
     """ Creates Spark Session
@@ -27,6 +26,7 @@ def create_spark_session():
         .builder \
         .config("spark.jars.packages", ','.join(packages)) \
         .getOrCreate()
+
     return spark
 
 def process_batch_data(spark,input_prefix, output_prefix):
@@ -68,7 +68,7 @@ def process_batch_data(spark,input_prefix, output_prefix):
     dim_forces = dim_forces.drop('force_id', 'force_name')
 
     # Writing the dimension table according to output prefix specified
-    dim_forces.write.mode('overwrite').json(f"s3a://{output_prefix}/dim_forces")
+    dim_forces.write.mode('overwrite').json(f"s3a://{output_prefix}/forces")
 
     # Reading the senior officers data
     senior_officers = spark.read.json(f"s3a://{input_prefix}/senior_officers.json")
@@ -139,7 +139,7 @@ def process_batch_data(spark,input_prefix, output_prefix):
                                            how='left').drop('neighborhood_id','neighborhood_name')
 
     # Writing the neighborhood dimension table according to the output prefix provided
-    dim_neighborhoods.write.mode('overwrite').json(f"s3a://{output_prefix}/dim_neighborhoods")
+    dim_neighborhoods.write.mode('overwrite').json(f"s3a://{output_prefix}/neighborhoods")
 
     # Reading data for the boundaries for each neighborhoods
     neighborhood_boundaries = spark.read.json(f"s3a://{input_prefix}/neighborhood_boundaries.json")
@@ -167,7 +167,7 @@ def main():
     spark = create_spark_session()
 
     process_batch_data(spark,f"{aws_configs.S3['bucket']}/{aws_configs.S3['batched_key']}",
-                       f"{aws_configs.S3['bucket']}/{aws_configs.S3['batched_processed_key']}")
+                       f"{aws_configs.S3['bucket']}/{aws_configs.S3['batched_process_key']}")
 
 if __name__ == '__main__':
     main()

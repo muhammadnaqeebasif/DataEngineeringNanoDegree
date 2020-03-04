@@ -14,9 +14,6 @@ from airflow.operators.python_operator import PythonOperator
 aws_configs = AwsConfigs(f"{os.environ['AIRFLOW_HOME']}/credentials/credentials.csv", 
                          f"{os.environ['AIRFLOW_HOME']}/credentials/resources.cfg")
 
-def hello_world():
-    logging.info(f"Hello World! {aws_configs.S3['bucket']}")
-
 # Creating redshift connection
 redshift_conn = Connection(conn_id='redshift',
                   conn_type='postgres',
@@ -48,29 +45,106 @@ default_args = {
     'catchup': False,
     'start_date': datetime(2020, 3, 1),
     'retries': 3,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=1)
 }
 
 dag = DAG(
         'udacity-capstone-project',
         default_args=default_args,
         description='Load and transform data in Redshift with Airflow',
-        schedule_interval='@hourly'
+        schedule_interval='@once'
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+ending_operator = DummyOperator(task_id='End_execution',dag=dag)
+# creating a list of tables
+tables = ['forces','neighborhoods','crimes','date','senior_officers',
+          'neighborhood_locations','neighborhood_boundaries','outcomes']
 
-staging_neighborhoods_to_redshift = StageToRedshiftOperator(
-    task_id='Stage_neighborhood',
-    dag=dag,
-    redshift_conn_id='redshift',
-    aws_credentials_id ='aws_credentials',
-    table='staging_neighborhoods',
-    s3_bucket=aws_configs.S3['BUCKET'],
-    s3_key=f"{aws_configs.S3['batched_process_key']}/dim_neighborhoods",
-    region=aws_configs.REGION,
-    file_type='JSON',
-    create_table_stmt=CreateTableQueries.staging_neighborhoods_table_create
-)
+# path S3 which each staging table is loaded
+staging_tables_dict = {}
 
-start_operator >> staging_neighborhoods_to_redshift
+for table in tables:
+    if table == 'date':
+        continue
+    elif table in ['crimes','outcomes']:
+        prefix = aws_configs.S3['real_processed_key']
+    else:
+        prefix = aws_configs.S3['batched_process_key']
+    staging_tables_dict[table] = (f"{prefix}/{table}",getattr(CreateTableQueries,f"staging_{table}_table_create"))
+
+staging_to_redshift_operations = {}
+
+for table,(s3_key,create_table_stmt) in staging_tables_dict.items():
+    staging_to_redshift_operations[table] = StageToRedshiftOperator(
+                                                    task_id=f'Stage_{table}',
+                                                    dag=dag,
+                                                    redshift_conn_id='redshift',
+                                                    aws_credentials_id ='aws_credentials',
+                                                    table=f'staging_{table}',
+                                                    s3_bucket=aws_configs.S3['BUCKET'],
+                                                    s3_key=s3_key,
+                                                    region=aws_configs.REGION,
+                                                    file_type='JSON',
+                                                    create_table_stmt=create_table_stmt,
+                                                    drop_table = True
+                                                )
+
+dim_insert_operations = {}
+for table in tables[:4]:
+    if table == 'forces':
+        sql_stmt = SQLQueries.stage_table_insert.format(source=f"staging_{table}",
+                                                        cols="*",
+                                                        target=f"dim_{table}")
+    else:
+        sql_stmt = getattr(SQLQueries,f"{table}_table_insert")
+    dim_insert_operations[table] = LoadDimensionOperator(
+                                        task_id=f'Load_{table}_dim_table',
+                                        dag=dag,
+                                        redshift_conn_id='redshift',
+                                        table=f"dim_{table}",
+                                        sql_stmt=sql_stmt,
+                                        create_table_stmt=getattr(CreateTableQueries,f"dim_{table}_table_create")
+                                    ) 
+tables_insert_operations = {}
+for table in tables[4:7]:
+    insert_stmt = getattr(SQLQueries,f"{table}_insert_stmt")
+    sql_stmt = SQLQueries.stage_table_insert.format(source=f"staging_{table}",
+                                                    cols= ','.join(getattr(SQLQueries,f"{table}_cols")),
+                                                    target=table)
+    tables_insert_operations[table] = LoadDimensionOperator(
+                                        task_id=f'Load_{table}_table',
+                                        dag=dag,
+                                        redshift_conn_id='redshift',
+                                        table=table,
+                                        insert_stmt=insert_stmt,
+                                        sql_stmt=sql_stmt,
+                                        create_table_stmt=getattr(CreateTableQueries,f"{table}_table_create")
+                                    )
+
+fact_insert_operation = LoadFactOperator(
+                            task_id=f'Load_fact_outcomes_table',
+                            dag=dag,
+                            redshift_conn_id='redshift',
+                            table="fact_outcomes",
+                            sql_stmt=SQLQueries.outcomes_table_insert,
+                            insert_stmt=SQLQueries.outcomes_insert_stmt,
+                            create_table_stmt= CreateTableQueries.fact_outcomes_table_create
+                        )
+
+start_operator >> [operation for key,operation in staging_to_redshift_operations.items()]
+
+staging_to_redshift_operations['forces'] >> dim_insert_operations['forces']
+staging_to_redshift_operations['neighborhoods'] >> dim_insert_operations['neighborhoods']
+staging_to_redshift_operations['crimes'] >> dim_insert_operations['crimes']
+[staging_to_redshift_operations['crimes'],staging_to_redshift_operations['outcomes']] >> dim_insert_operations['date']
+
+for table in ['forces','neighborhoods','crimes','date']:
+    dim_insert_operations[table] >> fact_insert_operation
+    for other_tables in tables[4:7]:
+        dim_insert_operations[table] >> tables_insert_operations[other_tables]
+
+for table in tables[4:7]:
+    tables_insert_operations[table] >> ending_operator
+
+fact_insert_operation >> ending_operator

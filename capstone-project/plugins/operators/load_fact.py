@@ -11,6 +11,7 @@ class LoadFactOperator(BaseOperator):
                  redshift_conn_id,
                  table,
                  sql_stmt,
+                 insert_stmt=None,
                  create_table_stmt=None,
                  *args, **kwargs):
         """LoadFactOperator Constructor to inialize the object.
@@ -32,6 +33,7 @@ class LoadFactOperator(BaseOperator):
         self.redshift_conn_id = redshift_conn_id
         self.table = table
         self.sql_stmt = sql_stmt
+        self.insert_stmt = insert_stmt
         self.create_table_stmt = create_table_stmt
 
     def execute(self, context):
@@ -51,7 +53,10 @@ class LoadFactOperator(BaseOperator):
             redshift.run(self.create_table_stmt)
 
         # Loads the data into the fact table according to the statement specified
-        formatted_sql = f"INSERT INTO {self.table} ({self.sql_stmt})"
+        if self.insert_stmt:
+            formatted_sql = f"{self.insert_stmt} ({self.sql_stmt})"
+        else:
+            formatted_sql = f"INSERT INTO {self.table} ({self.sql_stmt})"
         redshift.run(formatted_sql)
 
         # If loading to the table is successful then print Success to the logs

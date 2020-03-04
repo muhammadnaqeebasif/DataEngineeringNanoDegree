@@ -38,6 +38,7 @@ class StageToRedshiftOperator(BaseOperator):
                  delimiter=',',
                  ignore_headers=1,
                  create_table_stmt=None,
+                 drop_table = False,
                  *args, **kwargs):
         """StageToRedshiftOperator Constructor to inialize the object.
         
@@ -67,6 +68,8 @@ class StageToRedshiftOperator(BaseOperator):
         create_table_stmt : str, optional
             If speficied the table is first created according to the
             statement provided, by default None
+        drop_table : bool, optional
+            If true then the table is dropped first
         """
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
@@ -82,6 +85,7 @@ class StageToRedshiftOperator(BaseOperator):
         self.delimiter = delimiter
         self.ignore_headers = ignore_headers
         self.create_table_stmt = create_table_stmt
+        self.drop_table = drop_table
 
     def execute(self, context):
         """ The function which is called by default by Airflow.
@@ -102,6 +106,11 @@ class StageToRedshiftOperator(BaseOperator):
         credentials = aws_hook.get_credentials()
         # creates a postgresql hook
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
+
+        # If drop_table is True then table is dropped first
+        if self.drop_table:
+            self.log.info(f'Dropping {self.table} in Redshift')
+            redshift.run(f"DROP TABLE IF EXISTS {self.table}")
 
         # If create_table_stmt is specified then the table is created first
         if self.create_table_stmt:

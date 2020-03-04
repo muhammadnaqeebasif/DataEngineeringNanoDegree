@@ -11,6 +11,7 @@ class LoadDimensionOperator(BaseOperator):
                  redshift_conn_id,
                  table,
                  sql_stmt,
+                 insert_stmt=None,
                  truncate=True,
                  create_table_stmt=None,
                  *args, **kwargs):
@@ -35,6 +36,7 @@ class LoadDimensionOperator(BaseOperator):
         self.redshift_conn_id = redshift_conn_id
         self.table = table
         self.sql_stmt = sql_stmt
+        self.insert_stmt = insert_stmt
         self.truncate = truncate
         self.create_table_stmt=create_table_stmt
 
@@ -59,7 +61,10 @@ class LoadDimensionOperator(BaseOperator):
             redshift.run(f"TRUNCATE TABLE {self.table}")
         
         # Loads the data into the dimension table according to the statement specified
-        formatted_sql = f"INSERT INTO {self.table} ({self.sql_stmt})"
+        if self.insert_stmt:
+            formatted_sql = f"{self.insert_stmt} ({self.sql_stmt})"
+        else:
+            formatted_sql = f"INSERT INTO {self.table} ({self.sql_stmt})"
         redshift.run(formatted_sql)
 
         # If loading to the table is successful then print Success to the logs
