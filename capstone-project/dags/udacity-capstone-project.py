@@ -9,7 +9,8 @@ from airflow import settings
 from airflow.models import Connection
 from aws_configuration_parser import *
 from airflow.operators.python_operator import PythonOperator
- 
+
+
 # creating aws configuration object
 aws_configs = AwsConfigs(f"{os.environ['AIRFLOW_HOME']}/credentials/credentials.csv", 
                          f"{os.environ['AIRFLOW_HOME']}/credentials/resources.cfg")
@@ -90,7 +91,7 @@ for table,(s3_key,create_table_stmt) in staging_tables_dict.items():
                                                     drop_table = True
                                                 )
 
-dim_insert_operations = {}
+table_insert_operations = {}
 for table in tables[:4]:
     if table == 'forces':
         sql_stmt = SQLQueries.stage_table_insert.format(source=f"staging_{table}",
@@ -98,7 +99,7 @@ for table in tables[:4]:
                                                         target=f"dim_{table}")
     else:
         sql_stmt = getattr(SQLQueries,f"{table}_table_insert")
-    dim_insert_operations[table] = LoadDimensionOperator(
+    table_insert_operations[table] = LoadDimensionOperator(
                                         task_id=f'Load_{table}_dim_table',
                                         dag=dag,
                                         redshift_conn_id='redshift',
@@ -106,13 +107,13 @@ for table in tables[:4]:
                                         sql_stmt=sql_stmt,
                                         create_table_stmt=getattr(CreateTableQueries,f"dim_{table}_table_create")
                                     ) 
-tables_insert_operations = {}
+
 for table in tables[4:7]:
     insert_stmt = getattr(SQLQueries,f"{table}_insert_stmt")
     sql_stmt = SQLQueries.stage_table_insert.format(source=f"staging_{table}",
                                                     cols= ','.join(getattr(SQLQueries,f"{table}_cols")),
                                                     target=table)
-    tables_insert_operations[table] = LoadDimensionOperator(
+    table_insert_operations[table] = LoadDimensionOperator(
                                         task_id=f'Load_{table}_table',
                                         dag=dag,
                                         redshift_conn_id='redshift',
@@ -122,7 +123,7 @@ for table in tables[4:7]:
                                         create_table_stmt=getattr(CreateTableQueries,f"{table}_table_create")
                                     )
 
-fact_insert_operation = LoadFactOperator(
+table_insert_operations['outcomes'] = LoadFactOperator(
                             task_id=f'Load_fact_outcomes_table',
                             dag=dag,
                             redshift_conn_id='redshift',
@@ -132,19 +133,44 @@ fact_insert_operation = LoadFactOperator(
                             create_table_stmt= CreateTableQueries.fact_outcomes_table_create
                         )
 
+data_quality_operations = {}
+for table in ['forces','neighborhoods','crimes','date']:
+    data_quality_operations[table] = DataQualityOperator(
+                                        task_id=f'Run_data_quality_checks_dim_{table}',
+                                        dag=dag,
+                                        redshift_conn_id='redshift',
+                                        table = f"dim_{table}"
+                                     )
+
+for table in ['senior_officers','neighborhood_locations','neighborhood_boundaries']:
+    data_quality_operations[table] = DataQualityOperator(
+                                        task_id=f'Run_data_quality_checks_{table}',
+                                        dag=dag,
+                                        redshift_conn_id='redshift',
+                                        table = table
+                                     )
+
+data_quality_operations['outcomes'] = DataQualityOperator(
+                                        task_id=f'Run_data_quality_checks_fact_outcomes',
+                                        dag=dag,
+                                        redshift_conn_id='redshift',
+                                        table = 'fact_outcomes'
+                                     ) 
+
 start_operator >> [operation for key,operation in staging_to_redshift_operations.items()]
 
-staging_to_redshift_operations['forces'] >> dim_insert_operations['forces']
-staging_to_redshift_operations['neighborhoods'] >> dim_insert_operations['neighborhoods']
-staging_to_redshift_operations['crimes'] >> dim_insert_operations['crimes']
-[staging_to_redshift_operations['crimes'],staging_to_redshift_operations['outcomes']] >> dim_insert_operations['date']
+staging_to_redshift_operations['forces'] >> table_insert_operations['forces']
+staging_to_redshift_operations['neighborhoods'] >> table_insert_operations['neighborhoods']
+staging_to_redshift_operations['crimes'] >> table_insert_operations['crimes']
+[staging_to_redshift_operations['crimes'],staging_to_redshift_operations['outcomes']] >> table_insert_operations['date']
 
 for table in ['forces','neighborhoods','crimes','date']:
-    dim_insert_operations[table] >> fact_insert_operation
+    table_insert_operations[table] >> table_insert_operations['outcomes']
     for other_tables in tables[4:7]:
-        dim_insert_operations[table] >> tables_insert_operations[other_tables]
+        table_insert_operations[table] >> table_insert_operations[other_tables]
 
-for table in tables[4:7]:
-    tables_insert_operations[table] >> ending_operator
+for table in tables:
+    table_insert_operations[table] >> data_quality_operations[table]
 
-fact_insert_operation >> ending_operator
+for table in tables:
+    data_quality_operations[table] >> ending_operator
