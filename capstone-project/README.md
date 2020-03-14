@@ -280,3 +280,25 @@ The DAG consists of the following stages:
 13. **static_data.py**: Fetches force and neighborhood related data from the API and stores the data in the S3 bucket specified in `resources.cfg` in `credentials` folder.
 
 14. **stream_data.py**: Fetches the crime related data and pushes the data into kinesis data stream specified in `resources.cfg` file in `credentials` folder.
+
+---
+
+## Scenarios
+* The data was increased by 100x
+    * Kinesis Data stream: The number of shards are calculated according to the number of writes in real time. In this case we use only 1 shard to create a data stream. Let's suppose that before only 30 records per second were written in the the data stream if we increase it by 100 then 3000 per seconds records are written to the stream and the total number of consumer applications are 2. So estimated shards would be `3`.
+    
+    * **Lambda Function**: A serverless service offered by AWS which scales automatically so no need to change anything.
+
+    * **Redshift**: We can increase the 
+
+    * Increase EMR cluster to handle large volume of data
+
+
+* The pipelines would be run on a daily basis by 7 am every day:
+    * The pipeline is scheduled to run every hour as the data is real time and streamed data. So it would run easily on daily basis and all the checks will be performed . If checks fail, then emails can be sent to operators and DAG logs can be looked upon to figure out what went wrong.
+    
+* Make it available to 100+ people:
+    * The redshift cluster can be scaled according to the requirement and requests. 
+
+
+---
