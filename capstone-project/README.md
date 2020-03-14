@@ -243,4 +243,8 @@ The DAG consists of the following stages:
     ```
 9. Now run the DAG in the airflow. Note `credentials` folder and its content are needed to run the airflow job and `credentials` folder should be in `~/airflow` directory.
 
+10. After you are done with the pipeline and release the resources. Run the following command in the terminal:
+    ```bash
+         python release_aws_resources.py
+    ```
 ---
