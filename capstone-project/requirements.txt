@@ -1,4 +1,5 @@
 boto3
+psycopg2-binary
 requests
 configparser
 pandas
