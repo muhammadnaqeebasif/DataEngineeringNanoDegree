@@ -245,6 +245,6 @@ The DAG consists of the following stages:
 
 10. After you are done with the pipeline and release the resources. Run the following command in the terminal:
     ```bash
-         python release_aws_resources.py
+    python release_aws_resources.py
     ```
 ---
