@@ -260,19 +260,23 @@ The DAG consists of the following stages:
 
 5. **plugins**: Plugin folder containing the plugins for airflow. This include custom operator, aws configuration parser and custom sql queries.
 
-6. **create_aws_resources.py**: Creates AWS resources. Needs `credentials` folder. This script creates `S3 bucket`, `kinesis data stream`, `kinesis firehose`, `lambda function` and `redshift cluster` according to the properties specified in `resources.cfg`.
+6. **README.md**: Contains the summary and instructions how to execute the project.
 
-7. **eda.ipynb**: The notebook which contains the EDA done on the records.
+7. **create_aws_resources.py**: Creates AWS resources. Needs `credentials` folder. This script creates `S3 bucket`, `kinesis data stream`, `kinesis firehose`, `lambda function` and `redshift cluster` according to the properties specified in `resources.cfg`.
 
-8. **lambda_function.py**: Script which contains the lambda function used by `create_aws_resources.py` to create lambda function in AWS.
+8. **eda.ipynb**: The notebook which contains the EDA done on the records.
 
-9. **release_aws_resources.py**: Releases all the resources in AWS that were created by **create_aws_resources.py**.
+9. **etl.py**: A python script to perform etl in spark. It performs etl on the data stored in `S3 bucket` specified in `resources.cfg` file and write the data back to `S3 Bucket`. This script needs `credentials` folder.
 
-10. **requirements.txt**: Contains all the required libraries used for the project. To install all the libraries run the following :
+10. **lambda_function.py**: Script which contains the lambda function used by `create_aws_resources.py` to create lambda function in AWS.
+
+11. **release_aws_resources.py**: Releases all the resources in AWS that were created by **create_aws_resources.py**.
+
+12. **requirements.txt**: Contains all the required libraries used for the project. To install all the libraries run the following :
     ```bash
     pip install -r requirements.txt
     ```
 
-11. **static_data.py**: Fetches force and neighborhood related data from the API and stores the data in the S3 bucket specified in `resources.cfg` in `credentials` folder.
+13. **static_data.py**: Fetches force and neighborhood related data from the API and stores the data in the S3 bucket specified in `resources.cfg` in `credentials` folder.
 
-12. **stream_data.py**: Fetches the crime related data and pushes the data into kinesis data stream specified in `resources.cfg` file in `credentials` folder.
+14. **stream_data.py**: Fetches the crime related data and pushes the data into kinesis data stream specified in `resources.cfg` file in `credentials` folder.
