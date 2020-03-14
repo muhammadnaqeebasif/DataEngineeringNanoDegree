@@ -289,7 +289,7 @@ The DAG consists of the following stages:
     
     * **Lambda Function**: A serverless service offered by AWS which scales automatically so no need to change anything.
 
-    * **Redshift**: We can increase the 
+    * **Redshift**: The redshift cluster can scaled according to the requirements.
 
     * Increase EMR cluster to handle large volume of data
 
