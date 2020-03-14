@@ -182,7 +182,7 @@ The whole data pipeline consists of the following parts:
 
 1. **Fetching data from the web**: The data is fetched from the web `API` in local computer. The `neighborhood` and `forces` related data are fetched and stored in the local computer and the data is then stored in the `S3` bucket. The `crime` related data is then streamed into Kinesis data stream.  
 2. **Processing the batch data**: The data that was directly put into the S3 bucket is then processed by the Spark cluster and is then stored in the S3 bucket. 
-3. **Prcessing the streamed data**: Lambda architecture is used here. The data which is streamed into Kinesis data stream is then pulled by Kinesis Firehose which then stores the exact copy to the S3 bucket. Streamed data is also processed by using Amazon Lambda Function and the data is then stored into S3 bucket.
+3. **Processing the streamed data**: Lambda architecture is used here. The data which is streamed into Kinesis data stream is then pulled by Kinesis Firehose which then stores the exact copy to the S3 bucket. Streamed data is also processed by using Amazon Lambda Function and the data is then stored into S3 bucket.
 4. **Staging/Creating the data models**: Airflow is used for schedule/stage the data from bucket to the database in Amazon Redshift. Further ETL is then performed on the staged data and the data is loaded into the schema. As the data is real time data airflow schedules the job on hourly basis.
 
 ---
