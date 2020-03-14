@@ -172,4 +172,35 @@ As it can be seen from the above exploration some of the fields in crime related
 The above Entity-Relationship Diagram shows the data model used. Seven staging tables are created as shown in the figure. These tables are used for staging the `JSON` data from the `S3` bucket. The tables in the schema are then copied from the staging tables. The fact table in the shcema represents the outcome of the specific crime.
 
 
+## Data Pipeline Explained
+<img src="images/udacity-capstone-project-data-pipeline.png">
+The whole data pipeline consists of the following parts:
+
+1. **Fetching data from the web**: The data is fetched from the web `API` in local computer. The `neighborhood` and `forces` related data are fetched and stored in the local computer and the data is then stored in the `S3` bucket. The `crime` related data is then streamed into Kinesis data stream.  
+2. **Processing the batch data**: The data that was directly put into the S3 bucket is then processed by the Spark cluster and is then stored in the S3 bucket. 
+3. **Prcessing the streamed data**: Lambda architecture is used here. The data which is streamed into Kinesis data stream is then pulled by Kinesis Firehose which then stores the exact copy to the S3 bucket. Streamed data is also processed by using Amazon Lambda Function and the data is then stored into S3 bucket.
+4. **Staging/Creating the data models**: Airflow is used for schedule/stage the data from bucket to the database in Amazon Redshift. Further ETL is then performed on the staged data and the data is loaded into the schema. As the data is real time data airflow schedules the job on hourly basis.
+
+## ETL pipeline Explained
+Here ETL pipeline is run via spark, lambda function and airflow separately. So let's look at them:
+
+### ETL via Spark
+<img src="images/etl_spark.png">
+
+As it can be seen that the data is loaded from the S3 bucket inside spark. All the data is in json format. The data is processed and then written into S3 bucket again.
+
+### ETL via Lambda function
+<img src="images/lambda-etl.png">
+
+As it can be seen from the above figure that the data which is streamed into kinesis is processed in the lambda function and crime and outcomes data is extracted and then the both of the data is written in S3 bucket.
+
+### ETL via Airflow
+
+<img src="images/airflow-etl.png">
+The DAG consists of the following stages:
+1. The data is pulled from the S3 into the staging tables in Redshift.
+2. Data is then loadled into the four dimension tables.
+3. The fact tables and other tables are built either by joining or loading directly from the staging tables.
+4. The quality checks are run on all the tables.
+
 
