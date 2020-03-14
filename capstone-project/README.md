@@ -248,3 +248,31 @@ The DAG consists of the following stages:
     python release_aws_resources.py
     ```
 ---
+
+## Project File Structure
+1. **credentials** - required by the all the scripts related to AWS operations to create red shift cluster. Copy `credentials.csv` from AWS user account(When you create it) here. 
+
+2. **dags**: Folder containing the dag which is to be run by the airflow.
+
+3. **data_create_helpers**: Folder containing helper functions to fetch the data from the API, transform it  and store the data into S3.
+
+4. **images**: Folder containing the images used by the `README.md`
+
+5. **plugins**: Plugin folder containing the plugins for airflow. This include custom operator, aws configuration parser and custom sql queries.
+
+6. **create_aws_resources.py**: Creates AWS resources. Needs `credentials` folder. This script creates `S3 bucket`, `kinesis data stream`, `kinesis firehose`, `lambda function` and `redshift cluster` according to the properties specified in `resources.cfg`.
+
+7. **eda.ipynb**: The notebook which contains the EDA done on the records.
+
+8. **lambda_function.py**: Script which contains the lambda function used by `create_aws_resources.py` to create lambda function in AWS.
+
+9. **release_aws_resources.py**: Releases all the resources in AWS that were created by **create_aws_resources.py**.
+
+10. **requirements.txt**: Contains all the required libraries used for the project. To install all the libraries run the following :
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+11. **static_data.py**: Fetches force and neighborhood related data from the API and stores the data in the S3 bucket specified in `resources.cfg` in `credentials` folder.
+
+12. **stream_data.py**: Fetches the crime related data and pushes the data into kinesis data stream specified in `resources.cfg` file in `credentials` folder.
