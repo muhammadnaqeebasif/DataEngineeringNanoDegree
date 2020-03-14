@@ -53,7 +53,7 @@ dag = DAG(
         'udacity-capstone-project',
         default_args=default_args,
         description='Load and transform data in Redshift with Airflow',
-        schedule_interval='@once'
+        schedule_interval='@hourly'
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -159,8 +159,11 @@ data_quality_operations['outcomes'] = DataQualityOperator(
 
 start_operator >> [operation for key,operation in staging_to_redshift_operations.items()]
 
-staging_to_redshift_operations['forces'] >> table_insert_operations['forces']
-staging_to_redshift_operations['neighborhoods'] >> table_insert_operations['neighborhoods']
+[staging_to_redshift_operations[table] for table in ['forces','senior_officers']] >> table_insert_operations['forces']
+[staging_to_redshift_operations[table] for table in ['neighborhoods',
+                                                     'neighborhood_locations',
+                                                     'neighborhood_boundaries']] >> table_insert_operations['neighborhoods']
+                                                     
 staging_to_redshift_operations['crimes'] >> table_insert_operations['crimes']
 [staging_to_redshift_operations['crimes'],staging_to_redshift_operations['outcomes']] >> table_insert_operations['date']
 
