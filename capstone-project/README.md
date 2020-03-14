@@ -217,17 +217,30 @@ The DAG consists of the following stages:
 2. Fill up `resources.cfg` file in the credentials folder according to your requirements.
 
 3. Install all the required python libraries by executing the following command:
-            pip install -r requirements.txt
-4. Create all the resources in `AWS` by running the following command in the terminal:
-            python create_aws_resources.py
+    ```bash
+    pip install -r requirements.txt
+    ```
 
+4. Create all the resources in `AWS` by running the following command in the terminal:
+    ```bash
+    python create_aws_resources.py
+    ```
 5. Fetch forces and neighborhood related records from the API and storing the data into `S3 bucket` by entering the following command in the terminal:
-            python static_data.py
-            
+    ```bash
+    python static_data.py
+    ```        
 6. Fetch the crime related records from the API and pushing the records into the `Kinesis data stream` by entering the following command in the terminal:
-            python stream_data.py
+     ```bash       
+     python stream_data.py
+     ```
 7. Perform the ETL using spark by running the following command in the terminal:
-            python etl.py
-            
-8. 
+     ```bash
+     python etl.py
+     ```
+8. To run airflow DAG you need to create the environment variable in the bash by using the following command:
+    ```bash
+    export AIRFLOW_HOME=~/airflow
+    ```
+9. Now run the DAG in the airflow. Note `credentials` folder and its content are needed to run the airflow job and `credentials` folder should be in `~/airflow` directory.
+
 ---
