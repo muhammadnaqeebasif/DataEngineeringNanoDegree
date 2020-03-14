@@ -11,6 +11,7 @@ then be tested by running queries.
 
 Further documentation about the API can be found [here](https://data.police.uk/docs/)
 
+---
 ## Data Sources
 * **Forces**: A list of all the police forces available via the API except the British Transport Police, which is 
 excluded from the list returned. Further documentation of the data can be found 
@@ -33,6 +34,7 @@ available via the API. Further documentation of the data can be found
 64-character identifier, as returned by other API methods. Further documentation can be found 
 [here](https://data.police.uk/docs/method/outcomes-for-crime/)
 
+---
 ## Exploration and Assessing the data
 The different calls mainly forces, neighborhood and crimes related requests from the API are explored. Following are the results obtained after the exploration.
 ### Forces related Exploration
@@ -160,6 +162,8 @@ After reading the documentation it can be seen that to get the information on th
 
 As it can be seen from the above exploration some of the fields in crime related records are nested. During ETL they'll be unnested.
 
+---
+
 ## Data Model
 ### Staging Tables
 <img src="images/staging_tables.png">
@@ -181,6 +185,8 @@ The whole data pipeline consists of the following parts:
 3. **Prcessing the streamed data**: Lambda architecture is used here. The data which is streamed into Kinesis data stream is then pulled by Kinesis Firehose which then stores the exact copy to the S3 bucket. Streamed data is also processed by using Amazon Lambda Function and the data is then stored into S3 bucket.
 4. **Staging/Creating the data models**: Airflow is used for schedule/stage the data from bucket to the database in Amazon Redshift. Further ETL is then performed on the staged data and the data is loaded into the schema. As the data is real time data airflow schedules the job on hourly basis.
 
+---
+
 ## ETL pipeline Explained
 Here ETL pipeline is run via spark, lambda function and airflow separately. So let's look at them:
 
@@ -198,9 +204,13 @@ As it can be seen from the above figure that the data which is streamed into kin
 
 <img src="images/airflow-etl.png">
 The DAG consists of the following stages:
+
 1. The data is pulled from the S3 into the staging tables in Redshift.
 2. Data is then loadled into the four dimension tables.
 3. The fact tables and other tables are built either by joining or loading directly from the staging tables.
 4. The quality checks are run on all the tables.
+
+---
+
 
 
