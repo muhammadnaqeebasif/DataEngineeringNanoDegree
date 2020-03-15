@@ -50,7 +50,7 @@ To run the dag the following pre-requisites must be met:
 
 ## Airflow DAG
 The following dag in airflow is created as the end results:
-<img src="images/dag.png">
+<img src="images/dag.PNG">
 
 Now Lets' look at each and every task in the DAG:
 * **Stage_events**: Stages the logs data from S3 to the `staging_events` table. 
