@@ -3,3 +3,5 @@ This repository contains the work and projects done in the Udacity Data Engineer
 following :
 * **Modules** - contains the modules covered in the Nano Degree.
 * **Projects** - contains the projects created in the Nano Degree.
+* **capstone-project** - contains the capstone project created in the Nano Degree Program.
+
